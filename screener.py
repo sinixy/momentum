@@ -1,6 +1,7 @@
 from binance import AsyncClient, BinanceSocketManager
-from aiogram import Bot
 from collections import deque
+
+from bot.alerts import send_alerts
 
 
 class Ticker:
@@ -17,7 +18,7 @@ class Ticker:
         return (p2 - p1) / p1
 
 
-async def screen(bot: Bot):
+async def screen():
     client = await AsyncClient.create()
     bsm = BinanceSocketManager(client)
 
@@ -29,9 +30,7 @@ async def screen(bot: Bot):
             alerts = []
             for e in events:
                 symbol = e['s']
-                if symbol[-4:] != 'USDT':
-                    continue
-
+                if symbol[-4:] != 'USDT': continue
                 if ticker := tickers.get(symbol):
                     ticker.update(e['E'], e['c'])
                     change = ticker.get_change()
@@ -39,3 +38,4 @@ async def screen(bot: Bot):
                 else:
                     tickers[symbol] = Ticker(symbol)
                     tickers[symbol].update(e['E'], e['c'])
+            if alerts: await send_alerts(alerts)
